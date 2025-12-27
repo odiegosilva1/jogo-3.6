@@ -4,7 +4,7 @@ var speed = 10
 var accel = 20
 var gravity = 9.8
 var jump = 5
-var mousesense = .3
+var mousesense = .4
 
 var CurrentHP = 10
 var demage = 1.5
