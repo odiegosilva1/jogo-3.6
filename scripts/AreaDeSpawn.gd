@@ -1,12 +1,12 @@
-extends Area
+extends Area3D
 
 # Export variáveis para ajustar no Inspector
-export(PackedScene) var monster_scene
-export(PackedScene) var item_drop_scene  # Item que o monstro dropa
-export(int) var max_monsters = 8
-export(float) var min_spawn_distance = 5.0  # Distância mínima do player
-export(float) var max_spawn_distance = 25.0  # Distância máxima do player
-export(float) var spawn_check_interval = 3.0  # Verifica a cada X segundos
+@export var monster_scene: PackedScene
+@export var item_drop_scene: PackedScene  # Item que o monstro dropa
+@export var max_monsters: int = 8
+@export var min_spawn_distance: float = 5.0  # Distância mínima do player
+@export var max_spawn_distance: float = 25.0  # Distância máxima do player
+@export var spawn_check_interval: float = 3.0  # Verifica a cada X segundos
 
 # Variáveis
 var current_monsters = 0
@@ -25,7 +25,7 @@ func _ready():
 		return
 	
 	# Cria container para monstros
-	monster_container = Spatial.new()
+	monster_container = Node3D.new()
 	monster_container.name = "MonsterContainer"
 	get_parent().add_child(monster_container)
 	
@@ -49,7 +49,7 @@ func spawn_initial_monsters():
 	var initial_count = min(3, max_monsters)
 	for _i in range(initial_count):  # Adicionado underscore
 		spawn_monster()
-		yield(get_tree().create_timer(0.5), "timeout")  # Delay entre spawns
+		await get_tree().create_timer(0.5).timeout  # Delay entre spawns
 
 func try_spawn_monster():
 	# Só spawna se tiver menos monstros que o máximo
@@ -73,8 +73,8 @@ func spawn_monster():
 	
 	if position:
 		# Instancia o monstro
-		var monster = monster_scene.instance()
-		monster.translation = position
+		var monster = monster_scene.instantiate()
+		monster.position = position
 		monster_container.add_child(monster)
 		
 		# Configura o monstro para dropar item
@@ -83,7 +83,7 @@ func spawn_monster():
 		current_monsters += 1
 		
 		# Conecta sinais
-		monster.connect("tree_exiting", self, "_on_monster_died", [monster])
+		monster.connect("tree_exiting", Callable(self, "_on_monster_died").bind(monster))
 		
 		print("Monstro spawnado em: ", position)
 		return monster
@@ -95,9 +95,9 @@ func find_valid_spawn_position():
 	var bounds = get_spawn_bounds()
 	
 	var random_pos = Vector3(
-		rand_range(bounds.min_x, bounds.max_x),
+		randf_range(bounds.min_x, bounds.max_x),
 		0,
-		rand_range(bounds.min_z, bounds.max_z)
+		randf_range(bounds.min_z, bounds.max_z)
 	)
 	
 	# Verifica se a posição é válida
@@ -116,7 +116,7 @@ func get_spawn_bounds():
 		"max_z": 10
 	}
 	
-	if shape is CollisionShape and shape.shape is BoxShape:
+	if shape is CollisionShape3D and shape.shape is BoxShape3D:
 		var extents = shape.shape.extents
 		var global_pos = global_transform.origin
 		
@@ -141,12 +141,12 @@ func is_valid_spawn_position(position: Vector3) -> bool:
 			return false
 	
 	# Verifica se está em terreno sólido (raycast)
-	var space_state = get_world().direct_space_state
+	var space_state = get_world_3d().direct_space_state
 	var from = position + Vector3(0, 10, 0)  # 10 unidades acima
 	var to = position + Vector3(0, -20, 0)   # 20 unidades abaixo
 	
 	var result = space_state.intersect_ray(from, to, [], 1)
-	if not result.empty():
+	if not result.is_empty():
 		return true
 	
 	return false
@@ -169,7 +169,7 @@ func _on_monster_died(monster):
 	print("Monstro morreu. Monstros ativos: ", current_monsters)
 	
 	# Respawn após delay
-	yield(get_tree().create_timer(rand_range(5.0, 10.0)), "timeout")
+	await get_tree().create_timer(randf_range(5.0, 10.0)).timeout
 	try_spawn_monster()
 
 # Função para spawn manual
@@ -177,13 +177,13 @@ func spawn_monster_at_position(position: Vector3):
 	if current_monsters >= max_monsters:
 		return null
 	
-	var monster = monster_scene.instance()
-	monster.translation = position
+	var monster = monster_scene.instantiate()
+	monster.position = position
 	monster_container.add_child(monster)
 	
 	_setup_monster_drop(monster)
 	
 	current_monsters += 1
-	monster.connect("tree_exiting", self, "_on_monster_died", [monster])
+	monster.connect("tree_exiting", Callable(self, "_on_monster_died").bind(monster))
 	
 	return monster

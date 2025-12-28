@@ -1,15 +1,22 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://assets/mobs/olho-mostro.glb" type="PackedScene" id=1]
+[ext_resource path="res://tscens/monstro.gd" type="Script" id=2]
 
-[sub_resource type="SphereShape" id=1]
-radius = 0.610041
+[sub_resource type="CapsuleShape3D" id=1]
+height = 0.002
 
-[node name="monstro" type="KinematicBody"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.11402, 0 )
-
-[node name="CollisionShape" type="CollisionShape" parent="."]
-shape = SubResource( 1 )
+[node name="monstro" type="CharacterBody3D" groups=["player"]]
+transform = Transform3D( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36632, 0 )
+script = ExtResource( 2 )
 
 [node name="olho-mostro" parent="." instance=ExtResource( 1 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0130942, -1.42432, -0.0223775 )
+transform = Transform3D( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.279404, 0, 0.391053 )
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D( 1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.297058, 1.34015, 0.392232 )
+shape = SubResource( 1 )
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[editable path="olho-mostro"]

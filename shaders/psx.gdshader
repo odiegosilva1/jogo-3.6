@@ -2,7 +2,7 @@ shader_type spatial;
 render_mode skip_vertex_transform, diffuse_burley; 
 
 //Albedo texture 
-uniform sampler2D albedoTex : hint_albedo; //Geometric resolution for vert sna[ 
+uniform sampler2D albedoTex : source_color; //Geometric resolution for vert sna[ 
 uniform float snapRes = 8.0; 
 uniform float roughness = 1.0;
 uniform float specular = 0.1;

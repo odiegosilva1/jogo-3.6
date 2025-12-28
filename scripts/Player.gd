@@ -1,4 +1,4 @@
-extends KinematicBody
+extends CharacterBody3D
 
 var speed = 10
 var accel = 20
@@ -6,14 +6,14 @@ var gravity = 9.8
 var jump = 5
 var mousesense = .4
 
-var CurrentHP = 10
-var demage = 1.5
+var currentHP = 10
+var demage = 1
 
 var dire = Vector3()
 var vel = Vector3()
 var fall = Vector3()
 
-onready var head = $Head
+@onready var head = $Head
 # Opção 1: Use o caminho correto para o AnimationPlayer
 # Opção 2: Deixe null e use verificação
 var anim = null
@@ -49,20 +49,12 @@ func _input(event):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
 	if event is InputEventMouseMotion and head:
-		rotate_y(deg2rad(-event.relative.x * mousesense))
-		head.rotate_x(deg2rad(-event.relative.y * mousesense))
-		head.rotation.x = clamp(head.rotation.x, deg2rad(-15), deg2rad(15))
+		rotate_y(deg_to_rad(-event.relative.x * mousesense))
+		head.rotate_x(deg_to_rad(-event.relative.y * mousesense))
+		head.rotation.x = clamp(head.rotation.x, deg_to_rad(-15), deg_to_rad(15))
 
-# Dano do player
-func takeDemage(damage):
-	CurrentHP -= damage
-	
-	if CurrentHP <= 0:
-		die()
+	print(currentHP)	
 		
-func die():
-	get_tree().reload_current_scene()		
-
 func _physics_process(delta):
 	dire = Vector3()
 	
@@ -95,13 +87,16 @@ func _physics_process(delta):
 	dire = dire.normalized()
 	
 	# Interpolar velocidade horizontal
-	vel = vel.linear_interpolate(dire * speed, accel * delta)
+	vel = vel.lerp(dire * speed, accel * delta)
 	
 	# Combinar velocidade horizontal e vertical
 	var final_vel = vel + fall
 	
 	# Aplicar movimento
-	final_vel = move_and_slide(final_vel, Vector3.UP)
+	set_velocity(final_vel)
+	set_up_direction(Vector3.UP)
+	move_and_slide()
+	final_vel = velocity
 	
 	# Atualizar fall
 	if is_on_floor() and fall.y < 0:
@@ -130,3 +125,16 @@ func animate(is_moving):
 				anim.play("Idle")
 			else:
 				print("ERRO: Animação 'Idle' não encontrada!")
+				
+# Funcao de dar dano
+func takeDamage(damage):
+	currentHP -= damage
+	
+	if currentHP <= 0:
+		die()
+		
+func die():
+	get_tree().reload_current_scene()		
+	
+	
+				 

@@ -1,4 +1,4 @@
-extends Spatial
+extends Node3D
 
 # Variáveis básicas
 var player = null
@@ -53,14 +53,14 @@ func _setup_basic_ui():
 		var score_label = Label.new()
 		score_label.name = "ScoreLabel"
 		score_label.text = "Score: 0"
-		score_label.rect_position = Vector2(10, 10)
+		score_label.position = Vector2(10, 10)
 		ui.add_child(score_label)
 		
 		# Cria label de tempo
 		var time_label = Label.new()
 		time_label.name = "TimeLabel"
 		time_label.text = "Time: 0"
-		time_label.rect_position = Vector2(10, 30)
+		time_label.position = Vector2(10, 30)
 		ui.add_child(time_label)
 		
 		print("UI básica criada")
@@ -117,9 +117,9 @@ func on_player_died():
 		var game_over_label = Label.new()
 		game_over_label.name = "GameOverLabel"
 		game_over_label.text = "GAME OVER\nScore: " + str(score) + "\nPress R to restart"
-		game_over_label.rect_position = Vector2(200, 200)
-		game_over_label.rect_size = Vector2(200, 100)
-		game_over_label.align = Label.ALIGN_CENTER
+		game_over_label.position = Vector2(200, 200)
+		game_over_label.size = Vector2(200, 100)
+		game_over_label.align = Label.ALIGNMENT_CENTER
 		$UI.add_child(game_over_label)
 	
 	# Configura input para restart

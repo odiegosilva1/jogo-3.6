@@ -1,23 +1,23 @@
 
-extends Spatial  # ← USAR SPATIAL PARA 3D
+extends Node3D  # ← USAR SPATIAL PARA 3D
 
 # ==================== CONFIGURAÇÕES (EDITÁVEIS NO INSPECTOR) ====================
-export(PackedScene) var monster_scene      # Cena do monstro a spawnar
-export(PackedScene) var item_drop_scene    # Item que monstro dropa ao morrer (opcional)
+@export var monster_scene: PackedScene      # Cena do monstro a spawnar
+@export var item_drop_scene: PackedScene    # Item que monstro dropa ao morrer (opcional)
 
 # Limites de spawn
-export(int) var max_monsters = 8           # Máximo de monstros simultâneos
-export(float) var spawn_radius_min = 5.0   # Distância mínima do spawner
-export(float) var spawn_radius_max = 25.0  # Distância máxima do spawner
-export(float) var spawn_interval = 3.0     # Intervalo entre tentativas de spawn
-export(float) var min_distance_from_player = 10.0  # Distância mínima do player
-export(float) var respawn_delay_min = 5.0  # Delay mínimo para respawn
-export(float) var respawn_delay_max = 10.0 # Delay máximo para respawn
+@export var max_monsters: int = 8           # Máximo de monstros simultâneos
+@export var spawn_radius_min: float = 5.0   # Distância mínima do spawner
+@export var spawn_radius_max: float = 25.0  # Distância máxima do spawner
+@export var spawn_interval: float = 3.0     # Intervalo entre tentativas de spawn
+@export var min_distance_from_player: float = 10.0  # Distância mínima do player
+@export var respawn_delay_min: float = 5.0  # Delay mínimo para respawn
+@export var respawn_delay_max: float = 10.0 # Delay máximo para respawn
 
 # Controle de spawn
-export(bool) var auto_spawn = true         # Começa a spawnar automaticamente
-export(int) var initial_spawn_count = 3    # Quantos monstros spawnar no início
-export(float) var spawn_chance = 0.7       # Chance de spawn (0.0 a 1.0)
+@export var auto_spawn: bool = true         # Começa a spawnar automaticamente
+@export var initial_spawn_count: int = 3    # Quantos monstros spawnar no início
+@export var spawn_chance: float = 0.7       # Chance de spawn (0.0 a 1.0)
 
 # ==================== VARIÁVEIS INTERNAS ====================
 var current_monsters = 0                   # Contador de monstros ativos
@@ -89,8 +89,8 @@ func _spawn_monster():
 # Cria um monstro em posição específica
 func _create_monster_at_position(position: Vector3):
 	# Instancia o monstro
-	var monster = monster_scene.instance()
-	monster.translation = position
+	var monster = monster_scene.instantiate()
+	monster.position = position
 	
 	# Configura drop se houver item definido
 	_setup_monster_drop(monster)
@@ -105,7 +105,7 @@ func _create_monster_at_position(position: Vector3):
 	_register_spawn_position(position)
 	
 	# Conecta sinal de morte
-	monster.connect("tree_exiting", self, "_on_monster_died", [monster])
+	monster.connect("tree_exiting", Callable(self, "_on_monster_died").bind(monster))
 	
 	return monster
 
@@ -131,7 +131,7 @@ func _find_player():
 
 # Cria container para organizar monstros
 func _create_monster_container():
-	monster_container = Spatial.new()
+	monster_container = Node3D.new()
 	monster_container.name = "MonsterContainer_" + name
 	get_parent().add_child(monster_container)
 
@@ -149,8 +149,8 @@ func _find_valid_spawn_position(max_attempts: int = 10):
 # Gera uma posição aleatória
 func _generate_random_position():
 	# Gera ângulo e distância aleatórios
-	var angle = rand_range(0, PI * 2)
-	var distance = rand_range(spawn_radius_min, spawn_radius_max)
+	var angle = randf_range(0, PI * 2)
+	var distance = randf_range(spawn_radius_min, spawn_radius_max)
 	
 	# Calcula posição relativa ao spawner
 	var relative_pos = Vector3(
@@ -160,19 +160,19 @@ func _generate_random_position():
 	)
 	
 	# Retorna posição global
-	return translation + relative_pos
+	return position + relative_pos
 
 # Verifica se uma posição é válida para spawn
 func _is_valid_spawn_position(position: Vector3) -> bool:
 	# 1. Verifica distância do player
-	if player and player is Spatial:
-		var distance_to_player = position.distance_to(player.translation)
+	if player and player is Node3D:
+		var distance_to_player = position.distance_to(player.position)
 		if distance_to_player < min_distance_from_player:
 			return false
 	
 	# 2. Verifica distância de outros monstros
 	for monster in monster_container.get_children():
-		if position.distance_to(monster.translation) < 3.0:
+		if position.distance_to(monster.position) < 3.0:
 			return false
 	
 	# 3. Verifica histórico de spawns (evita spawns muito próximos)
@@ -192,16 +192,16 @@ func _is_valid_spawn_position(position: Vector3) -> bool:
 
 # Verifica se há chão na posição
 func _has_ground_at_position(position: Vector3) -> bool:
-	var space_state = get_world().direct_space_state
+	var space_state = get_world_3d().direct_space_state
 	var from = position + Vector3(0, 10, 0)    # 10 unidades acima
 	var to = position + Vector3(0, -20, 0)     # 20 unidades abaixo
 	
 	var result = space_state.intersect_ray(from, to, [], 1)
-	return not result.empty()
+	return not result.is_empty()
 
 # Verifica se está dentro de obstáculo
 func _is_inside_obstacle(position: Vector3) -> bool:
-	var space_state = get_world().direct_space_state
+	var space_state = get_world_3d().direct_space_state
 	
 	# Verifica em 4 direções
 	var directions = [
@@ -243,7 +243,7 @@ func _spawn_initial_monsters():
 	for _i in range(count):
 		if _can_spawn():
 			_spawn_monster()
-			yield(get_tree().create_timer(0.5), "timeout")  # Delay entre spawns
+			await get_tree().create_timer(0.5).timeout  # Delay entre spawns
 
 # Verifica se pode spawnar
 func _can_spawn() -> bool:
@@ -276,8 +276,8 @@ func _on_monster_died(monster):
 	
 	# Respawn após delay aleatório
 	if auto_spawn and is_active:
-		var delay = rand_range(respawn_delay_min, respawn_delay_max)
-		yield(get_tree().create_timer(delay), "timeout")
+		var delay = randf_range(respawn_delay_min, respawn_delay_max)
+		await get_tree().create_timer(delay).timeout
 		_try_spawn_monster()
 
 # ==================== FUNÇÕES PÚBLICAS (PARA OUTROS SCRIPTS) ====================
@@ -298,7 +298,7 @@ func spawn_multiple(count: int, delay_between: float = 0.5):
 	for _i in range(count):
 		if _can_spawn():
 			_spawn_monster()
-			yield(get_tree().create_timer(delay_between), "timeout")
+			await get_tree().create_timer(delay_between).timeout
 
 # Limpa todos os monstros
 func clear_all_monsters():
